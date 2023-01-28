@@ -34,6 +34,7 @@ outputs = { self, nixpkgs }:
 			buildInputs = [
 				ghc
 				ghcid
+				hlint
 			];
 		};
 	};
