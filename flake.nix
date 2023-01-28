@@ -14,12 +14,15 @@ inputs = {
 outputs = { self, nixpkgs }:
 	let
 		pkgs = import nixpkgs { system = "x86_64-linux"; };
+		ghc = pkgs.haskellPackages.ghcWithPackages
+			(a: with a; [
+			]);
 	in {
 	packages.x86_64-linux.default =
 		pkgs.stdenv.mkDerivation {
 			name = "yip";
 			src = ./src;
-			buildInputs = with pkgs; [
+			buildInputs = [
 				ghc
 			];
 			buildPhase = "ghc Main.hs -o yip";
