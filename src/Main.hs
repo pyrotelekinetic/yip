@@ -16,4 +16,22 @@
  -  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
-main = putStrLn "Hello, World!"
+{-# LANGUAGE OverloadedStrings #-}
+
+import System.Environment (getArgs)
+import Data.Text as T
+
+main = do
+  (a : as) <- getArgs
+  case a of
+    [] -> showHelp
+    "--help" -> showHelp
+
+showHelp :: IO ()
+showHelp = print $ intercalate "\n" helpTxt
+  where
+  helpTxt =
+    [ "usage:"
+    , "\tyip <file>"
+    , "\tPreproccess given file"
+    ]
