@@ -28,6 +28,14 @@ outputs = { self, nixpkgs }:
 			buildPhase = "ghc Main.hs -o yip";
 			installPhase = "mkdir -p $out/bin; install -t $out/bin yip";
 		};
+
+	devShells.x86_64-linux.default = with pkgs;
+		mkShell {
+			buildInputs = [
+				ghc
+				ghcid
+			];
+		};
 	};
 
 }
