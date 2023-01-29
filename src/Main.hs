@@ -23,14 +23,16 @@ module Main where
 import System.Environment (getArgs)
 import Data.Text as T
 import Data.Text.IO as T
+import System.IO (stderr)
 
 import Parser
 
 main = do
-  (a : as) <- getArgs
-  case a of
+  as <- getArgs
+  case as of
     [] -> showHelp
-    "--help" -> showHelp
+    ("--help" : _) -> showHelp
+    _ -> T.hPutStrLn stderr "Nothing to do."
 
 showHelp :: IO ()
 showHelp = T.putStrLn $ T.unlines helpTxt
