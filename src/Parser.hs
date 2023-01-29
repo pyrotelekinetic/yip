@@ -18,25 +18,30 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Parser where
 
-import System.Environment (getArgs)
+import Data.Void (Void)
 import Data.Text as T
 import Data.Text.IO as T
+import Text.Megaparsec
+import Text.Megaparsec.Char (newline, space, string)
 
-import Parser
+type Parser = Parsec Void Text
 
-main = do
-  (a : as) <- getArgs
-  case a of
-    [] -> showHelp
-    "--help" -> showHelp
+data Line = Insert FilePath | Literal Text
+  deriving Show
 
-showHelp :: IO ()
-showHelp = T.putStrLn $ T.unlines helpTxt
-  where
-  helpTxt =
-    [ "usage:"
-    , "\tyip <file>"
-    , "\tPreproccess given file"
-    ]
+parseFile :: Parser [Line]
+parseFile = (Insert <$> try parsePath <|> Literal <$> parseLine) `sepEndBy` newline
+
+parsePath :: Parser FilePath
+parsePath = do
+  space
+  string "###"
+  r <- some $ notFollowedBy (string "###") *> noneOf ['\n', '\0']
+  string "###"
+  space
+  pure r
+
+parseLine :: Parser Text
+parseLine = pack <$> some (anySingleBut '\n')
