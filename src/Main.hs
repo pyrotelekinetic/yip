@@ -18,6 +18,8 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
+module Main where
+
 import System.Environment (getArgs)
 import Data.Void (Void)
 import Data.Text as T
