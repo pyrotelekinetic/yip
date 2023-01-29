@@ -37,7 +37,7 @@ main = do
     "--help" -> showHelp
 
 showHelp :: IO ()
-showHelp = T.putStrLn $ intercalate "\n" helpTxt
+showHelp = T.putStrLn $ T.unlines helpTxt
   where
   helpTxt =
     [ "usage:"
