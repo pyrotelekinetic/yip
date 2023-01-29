@@ -19,7 +19,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import System.Environment (getArgs)
+import Data.Void (Void)
 import Data.Text as T
+import Data.Text.IO as T
+import Text.Megaparsec
+import Text.Megaparsec.Char (newline, space, string)
+
+type Parser = Parsec Void Text
+
+data Line = Insert FilePath | Literal Text
+  deriving Show
 
 main = do
   (a : as) <- getArgs
@@ -35,3 +44,18 @@ showHelp = T.putStrLn $ intercalate "\n" helpTxt
     , "\tyip <file>"
     , "\tPreproccess given file"
     ]
+
+parseFile :: Parser [Line]
+parseFile = (Insert <$> try parsePath <|> Literal <$> parseLine) `sepEndBy` newline
+
+parsePath :: Parser FilePath
+parsePath = do
+  space
+  string "###"
+  r <- some $ notFollowedBy (string "###") *> noneOf ['\n', '\0']
+  string "###"
+  space
+  pure r
+
+parseLine :: Parser Text
+parseLine = pack <$> some (anySingleBut '\n')
