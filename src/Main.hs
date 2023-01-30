@@ -56,6 +56,7 @@ withRelativeDir = withCurrentDirectory . dropFileName
 
 process :: [Line] -> IO Text
 process [] = pure ""
+process [Literal l] = pure l
 process (Literal l : xs) = ((l <> "\n") <>) <$> process xs
 process (Insert f : xs) = do
   c <- T.readFile f
