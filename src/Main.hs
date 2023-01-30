@@ -21,6 +21,7 @@
 module Main where
 
 import System.Environment (getArgs)
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import System.IO (stderr)
@@ -32,6 +33,11 @@ main = do
   case as of
     [] -> showHelp
     ("--help" : _) -> showHelp
+    [f] -> do
+      c <- T.readFile f
+      let i = parse c
+      c' <- process i
+      T.putStr c'
     _ -> T.hPutStrLn stderr "Nothing to do."
 
 showHelp :: IO ()
@@ -42,3 +48,10 @@ showHelp = T.putStrLn $ T.unlines helpTxt
     , "\tyip <file>"
     , "\tPreproccess given file"
     ]
+
+process :: [Line] -> IO Text
+process [] = pure ""
+process (Literal l : xs) = ((l <> "\n") <>) <$> process xs
+process (Insert f : xs) = do
+  c <- T.readFile f
+  (c <>) <$> process xs

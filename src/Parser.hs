@@ -18,7 +18,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser (parse) where
+module Parser (parse, Line(..)) where
 
 import Data.Void (Void)
 import Data.Maybe (fromJust)
