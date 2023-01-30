@@ -18,13 +18,14 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser where
+module Parser (parse) where
 
 import Data.Void (Void)
+import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Text.Megaparsec
+import Text.Megaparsec hiding (parse)
 import Text.Megaparsec.Char (newline, space, string)
 
 type Parser = Parsec Void Text
@@ -32,11 +33,14 @@ type Parser = Parsec Void Text
 data Line = Insert FilePath | Literal Text
   deriving Show
 
-parseFile :: Parser [Line]
-parseFile = (Insert <$> try parsePath <|> Literal <$> parseLine) `sepEndBy` newline
+parse :: Text -> [Line]
+parse a = fromJust $ parseMaybe file a
 
-parsePath :: Parser FilePath
-parsePath = do
+file :: Parser [Line]
+file = (Insert <$> try path <|> Literal <$> line) `sepEndBy` newline <* eof
+
+path :: Parser FilePath
+path = do
   space
   string "###"
   r <- some $ notFollowedBy (string "###") *> noneOf ['\n', '\0']
@@ -44,5 +48,5 @@ parsePath = do
   space
   pure r
 
-parseLine :: Parser Text
-parseLine = T.pack <$> some (anySingleBut '\n')
+line :: Parser Text
+line = T.pack <$> some (anySingleBut '\n')
