@@ -21,8 +21,8 @@
 module Main where
 
 import System.Environment (getArgs)
-import Data.Text as T
-import Data.Text.IO as T
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import System.IO (stderr)
 
 import Parser

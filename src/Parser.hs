@@ -21,8 +21,9 @@
 module Parser where
 
 import Data.Void (Void)
-import Data.Text as T
-import Data.Text.IO as T
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Text.Megaparsec
 import Text.Megaparsec.Char (newline, space, string)
 
@@ -44,4 +45,4 @@ parsePath = do
   pure r
 
 parseLine :: Parser Text
-parseLine = pack <$> some (anySingleBut '\n')
+parseLine = T.pack <$> some (anySingleBut '\n')
