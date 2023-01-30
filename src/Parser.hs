@@ -26,7 +26,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Text.Megaparsec hiding (parse)
-import Text.Megaparsec.Char (newline, hspace, string)
+import Text.Megaparsec.Char (newline, hspace)
 
 type Parser = Parsec Void Text
 
@@ -42,9 +42,9 @@ file = (Insert <$> try path <|> Literal <$> line) `sepEndBy` newline <* eof
 path :: Parser FilePath
 path = do
   hspace
-  string "###"
-  r <- some $ notFollowedBy (string "###") *> noneOf ['\n', '\0']
-  string "###"
+  chunk "###"
+  r <- some $ notFollowedBy (chunk "###") *> noneOf ['\n', '\0']
+  chunk "###"
   hspace
   pure r
 
