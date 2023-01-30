@@ -25,6 +25,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import System.IO (stderr)
+import System.FilePath (dropFileName)
+import System.Directory (withCurrentDirectory)
 
 import Parser
 
@@ -36,7 +38,7 @@ main = do
     [f] -> do
       c <- T.readFile f
       let i = parse c
-      c' <- process i
+      c' <- withRelativeDir f $ process i
       T.putStr c'
     _ -> T.hPutStrLn stderr "Nothing to do."
 
@@ -48,6 +50,9 @@ showHelp = T.putStrLn $ T.unlines helpTxt
     , "\tyip <file>"
     , "\tPreproccess given file"
     ]
+
+withRelativeDir :: FilePath -> IO a -> IO a
+withRelativeDir = withCurrentDirectory . dropFileName
 
 process :: [Line] -> IO Text
 process [] = pure ""
