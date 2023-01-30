@@ -26,7 +26,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Text.Megaparsec hiding (parse)
-import Text.Megaparsec.Char (newline, space, string)
+import Text.Megaparsec.Char (space, string)
 
 type Parser = Parsec Void Text
 
@@ -37,11 +37,13 @@ parse :: Text -> [Line]
 parse a = fromJust $ parseMaybe file a
 
 file :: Parser [Line]
-file = (Insert <$> try path <|> Literal <$> line) `sepEndBy` newline <* eof
+file = do
+  r <- many $ (Insert <$> try path) <|> Literal <$> line
+  eof
+  pure r
 
 path :: Parser FilePath
 path = do
-  space
   string "###"
   r <- some $ notFollowedBy (string "###") *> noneOf ['\n', '\0']
   string "###"
@@ -49,4 +51,7 @@ path = do
   pure r
 
 line :: Parser Text
-line = T.pack <$> some (anySingleBut '\n')
+line = do
+  l <- some (anySingleBut '\n')
+  space
+  pure $ T.pack l
