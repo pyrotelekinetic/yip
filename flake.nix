@@ -1,6 +1,6 @@
 {
 
-description = "yip: a very simple preprocessor";
+description = "A very simple preprocessor";
 
 inputs = {
 	nixpkgs = {
@@ -22,6 +22,10 @@ outputs = { self, nixpkgs }:
 	packages.x86_64-linux.default =
 		pkgs.stdenv.mkDerivation {
 			name = "yip";
+			meta = {
+				license = pkgs.lib.licenses.agpl3Plus;
+				description = "A very simple preprocessor";
+			};
 			src = ./src;
 			buildInputs = [
 				ghc
