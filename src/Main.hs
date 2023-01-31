@@ -29,6 +29,7 @@ import System.FilePath (dropFileName)
 import System.Directory (withCurrentDirectory)
 
 import Parser
+import Command
 
 main = do
   as <- getArgs

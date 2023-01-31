@@ -17,6 +17,7 @@ outputs = { self, nixpkgs }:
 		ghc = pkgs.haskellPackages.ghcWithPackages
 			(a: with a; [
 				megaparsec
+				optparse-applicative
 			]);
 	in {
 	packages.x86_64-linux.default =
