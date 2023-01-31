@@ -20,11 +20,9 @@
 
 module Main where
 
-import System.Environment (getArgs)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import System.IO (stderr)
 import System.FilePath (dropFileName)
 import System.Directory (withCurrentDirectory)
 
@@ -32,16 +30,11 @@ import Parser
 import Command
 
 main = do
-  as <- getArgs
-  case as of
-    [] -> showHelp
-    ("--help" : _) -> showHelp
-    [f] -> do
-      c <- T.readFile f
-      let i = parse c
-      c' <- withRelativeDir f $ process i
-      T.putStr c'
-    _ -> T.hPutStrLn stderr "Nothing to do."
+  o <- parseOpts
+  c <- T.readFile $ file o
+  let i = parse c
+  c' <- withRelativeDir (file o) $ process i
+  T.putStr c'
 
 showHelp :: IO ()
 showHelp = T.putStrLn $ T.unlines helpTxt
