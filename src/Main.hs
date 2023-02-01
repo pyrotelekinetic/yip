@@ -31,12 +31,10 @@ import Command
 
 main = do
   o <- parseOpts
-  c <- T.readFile $ input o
-  let i = parse c
-  c' <- withRelativeDir (input o) $ process i
+  r <- process $ input o
   case output o of
-    "-" -> T.putStr c'
-    f -> T.writeFile f c'
+    "-" -> T.putStr r
+    f -> T.writeFile f r
 
 showHelp :: IO ()
 showHelp = T.putStrLn $ T.unlines helpTxt
@@ -50,10 +48,13 @@ showHelp = T.putStrLn $ T.unlines helpTxt
 withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
 
-process :: [Line] -> IO Text
-process [] = pure ""
-process [Literal l] = pure l
-process (Literal l : xs) = ((l <> "\n") <>) <$> process xs
-process (Insert f : xs) = do
-  c <- T.readFile f
-  (c <>) <$> process xs
+process :: FilePath -> IO Text
+process x = withRelativeDir x . f . parse =<< T.readFile x
+  where
+  f :: [Line] -> IO Text
+  f [] = pure ""
+  f [Literal l] = pure l
+  f (Literal x : xs) = ((x <> "\n") <>) <$> f xs
+  f (Insert x : xs) = do
+    c <- process x
+    (c <>) <$> f xs
