@@ -21,17 +21,26 @@ module Command (parseOpts, Opts (..)) where
 import Options.Applicative
 
 data Opts = Opts
-  { file :: FilePath
-  }
+  { input :: FilePath
+  , output :: FilePath
+  } deriving Show
 
 parseOpts :: IO Opts
 parseOpts = execParser . info parser $ fullDesc
   <> progDesc "insert file contents into file"
 
 parser :: Parser Opts
-parser = Opts <$> fileP <**> helper
+parser = Opts <$> inputP <*> outputP <**> helper
 
-fileP :: Parser FilePath
-fileP = strArgument
+inputP :: Parser FilePath
+inputP = strArgument
   $ metavar "FILE"
   <> help "The file to process"
+
+outputP :: Parser FilePath
+outputP = strOption
+  $ metavar "OUTPUT"
+  <> help "Write output to OUTPUT"
+  <> short 'o'
+  <> long "output"
+  <> value "-"

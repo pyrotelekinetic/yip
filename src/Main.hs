@@ -31,10 +31,12 @@ import Command
 
 main = do
   o <- parseOpts
-  c <- T.readFile $ file o
+  c <- T.readFile $ input o
   let i = parse c
-  c' <- withRelativeDir (file o) $ process i
-  T.putStr c'
+  c' <- withRelativeDir (input o) $ process i
+  case output o of
+    "-" -> T.putStr c'
+    f -> T.writeFile f c'
 
 showHelp :: IO ()
 showHelp = T.putStrLn $ T.unlines helpTxt
