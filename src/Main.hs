@@ -31,7 +31,7 @@ import Command
 
 main = do
   o <- parseOpts
-  r <- process $ input o
+  r <- process (noRecurse o) $ input o
   case output o of
     "-" -> T.putStr r
     f -> T.writeFile f r
@@ -48,13 +48,30 @@ showHelp = T.putStrLn $ T.unlines helpTxt
 withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
 
-process :: FilePath -> IO Text
-process x = withRelativeDir x . f . parse =<< T.readFile x
+process :: Bool -> FilePath -> IO Text
+process True = processNoRecurse
+process False = processRecurse
+
+-- | Process with recursion
+processRecurse :: FilePath -> IO Text
+processRecurse x = withRelativeDir x . f . parse =<< T.readFile x
   where
   f :: [Line] -> IO Text
   f [] = pure ""
   f [Literal l] = pure l
   f (Literal x : xs) = ((x <> "\n") <>) <$> f xs
   f (Insert x : xs) = do
-    c <- process x
+    c <- processRecurse x
+    (c <>) <$> f xs
+
+-- | Process without recursion
+processNoRecurse :: FilePath -> IO Text
+processNoRecurse x = withRelativeDir x . f . parse =<< T.readFile x
+  where
+  f :: [Line] -> IO Text
+  f [] = pure ""
+  f [Literal l] = pure l
+  f (Literal x : xs) = ((x <> "\n") <>) <$> f xs
+  f (Insert x : xs) = do
+    c <- T.readFile x
     (c <>) <$> f xs
