@@ -42,15 +42,6 @@ main = do
         "-" -> T.putStr t
         f -> T.writeFile f t
 
-showHelp :: IO ()
-showHelp = T.putStrLn $ T.unlines helpTxt
-  where
-  helpTxt =
-    [ "usage:"
-    , "\tyip <file>"
-    , "\tPreproccess given file"
-    ]
-
 withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
 
