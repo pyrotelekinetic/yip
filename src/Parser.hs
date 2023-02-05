@@ -18,35 +18,61 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser (parse, Line(..)) where
+module Parser (parse, Chunk(..)) where
 
 import Data.Void (Void)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, maybeToList)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Text.Megaparsec hiding (parse)
-import Text.Megaparsec.Char (newline, hspace)
+import Text.Megaparsec.Char (newline, hspace, eol)
+import Data.Char (isSpace)
+import Data.Functor (void)
+import Control.Applicative (liftA2)
 
 type Parser = Parsec Void Text
 
-data Line = Insert FilePath | Literal Text
+data Chunk
+  = Literal Text
+  | Replace Text
+  | Insert FilePath (Maybe [(Text, Text)])
+  | Newline
   deriving Show
 
-parse :: Text -> [Line]
-parse a = fromJust $ parseMaybe file a
+sepEndBy' :: Parser a -> Parser a -> Parser [a]
+sepEndBy' p sep = liftA2 (:) p (liftA2 (:) sep (sepEndBy' p sep) <|> pure []) <|> pure []
 
-file :: Parser [Line]
-file = (Insert <$> try path <|> Literal <$> line) `sepEndBy` newline <* eof
+replace :: Parser Chunk
+replace = do
+  chunk "$$$"
+  hspace
+  r <- some $ satisfy (\x -> not (isSpace x) && x /= '$')
+  hspace
+  chunk "$$$"
+  pure . Replace $ T.pack r
 
-path :: Parser FilePath
-path = do
+insert :: Parser Chunk
+insert = do
   hspace
   chunk "###"
   r <- some $ notFollowedBy (chunk "###") *> noneOf ['\n', '\0']
   chunk "###"
   hspace
+  pure $ Insert r Nothing
+
+literal :: Parser Chunk
+literal = do
+  xs <- some $ do
+    notFollowedBy (void replace <|> void eol <|> eof)
+    anySingle
+  pure . Literal . T.pack $ xs
+
+file :: Parser [Chunk]
+file = do
+  r <- concat <$> sepEndBy' (pure <$> try insert <|> many (try replace <|> literal)) ([Newline] <$ eol)
+  eof
   pure r
 
-line :: Parser Text
-line = T.pack <$> many (anySingleBut '\n')
+parse :: Text -> [Chunk]
+parse a = fromJust $ parseMaybe file a

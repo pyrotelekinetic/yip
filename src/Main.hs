@@ -53,11 +53,12 @@ process False = processRecurse S.empty
 processRecurse :: Set FilePath -> FilePath -> IO (Either String Text)
 processRecurse s x = withRelativeDir x . f s . parse =<< T.readFile x
   where
-  f :: Set FilePath -> [Line] -> IO (Either String Text)
+  f :: Set FilePath -> [Chunk] -> IO (Either String Text)
   f _ [] = pure $ Right ""
   f _ [Literal l] = pure $ Right l
+  f _ (Newline : xs) = (Right "\n" <<>>) <$> f s xs
   f s (Literal x : xs) = (Right (x <> "\n") <<>>) <$> f s xs
-  f s (Insert x : xs)
+  f s (Insert x _ : xs)
     | S.member x s = pure $ Left "Error: circular graph detected"
     | otherwise = do
       c <- processRecurse (S.insert x s) x
@@ -70,10 +71,11 @@ processRecurse s x = withRelativeDir x . f s . parse =<< T.readFile x
 processNoRecurse :: FilePath -> IO Text
 processNoRecurse x = withRelativeDir x . f . parse =<< T.readFile x
   where
-  f :: [Line] -> IO Text
+  f :: [Chunk] -> IO Text
   f [] = pure ""
   f [Literal l] = pure l
-  f (Literal x : xs) = ((x <> "\n") <>) <$> f xs
-  f (Insert x : xs) = do
+  f (Newline : xs) = ("\n" <>) <$> f xs
+  f (Literal x : xs) = (x <>) <$> f xs
+  f (Insert x _ : xs) = do
     c <- T.readFile x
     (c <>) <$> f xs
