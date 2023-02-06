@@ -45,17 +45,17 @@ sepEndBy' p sep = liftA2 (:) p (liftA2 (:) sep (sepEndBy' p sep) <|> pure []) <|
 
 replace :: Parser Chunk
 replace = do
-  chunk "[!"
+  chunk "{!"
   r <- some $ satisfy (\x -> not (isSpace x) && x /= '!')
-  chunk "!]"
+  chunk "!}"
   pure . Replace $ T.pack r
 
 insert :: Parser Chunk
 insert = do
   hspace
-  chunk "[{"
-  r <- some $ notFollowedBy (chunk "}]") *> noneOf ['\n', '\0']
-  chunk "}]"
+  chunk "{:"
+  r <- some $ notFollowedBy (chunk ":}") *> noneOf ['\n', '\0']
+  chunk ":}"
   hspace
   pure $ Insert r Nothing
 
