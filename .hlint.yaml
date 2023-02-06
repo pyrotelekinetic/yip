@@ -26,3 +26,6 @@
 # Require an export list for all modules other than Main
 - warn: {name: Use module export list}
 - ignore: {name: Use module export list, within: [Main]}
+
+# Warn for redundant brackets with infix operators
+- warn: {name: Redundant bracket due to operator fixities}
