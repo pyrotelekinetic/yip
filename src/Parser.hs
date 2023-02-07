@@ -22,6 +22,8 @@ module Parser (parse, Chunk(..)) where
 
 import Data.Void (Void)
 import Data.Maybe (fromJust, maybeToList)
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -37,7 +39,7 @@ type Parser = Parsec Void Text
 data Chunk
   = Literal Text
   | Replace Text
-  | Insert FilePath [(Text, Text)]
+  | Insert FilePath (Map Text Text)
   | Newline
   deriving Show
 
@@ -70,7 +72,7 @@ insert = do
   chunk "{:"
   hspace
   r <- path $ chunk ":}"
-  a <- many p
+  a <- M.fromList <$> many p
   chunk ":}"
   hspace
   pure $ Insert r a

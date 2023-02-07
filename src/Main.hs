@@ -20,6 +20,8 @@
 
 module Main where
 
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -46,36 +48,42 @@ withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
 
 process :: Bool -> FilePath -> IO (Either String Text)
-process True = (pure <$>) . processNoRecurse
-process False = processRecurse S.empty
+process True = processNoRecurse M.empty
+process False = processRecurse S.empty M.empty
+
+(<<>>) :: Either e Text -> Either e Text -> Either e Text
+(<<>>) = liftA2 (<>)
 
 -- | Process with recursion
-processRecurse :: Set FilePath -> FilePath -> IO (Either String Text)
-processRecurse s x = withRelativeDir x . f s . parse =<< T.readFile x
+processRecurse :: Set FilePath -> Map Text Text -> FilePath -> IO (Either String Text)
+processRecurse s m x = withRelativeDir x . f s m . parse =<< T.readFile x
   where
-  f :: Set FilePath -> [Chunk] -> IO (Either String Text)
-  f _ [] = pure $ Right ""
-  f _ [Literal l] = pure $ Right l
-  f _ (Newline : xs) = (Right "\n" <<>>) <$> f s xs
-  f s (Literal x : xs) = (Right (x <> "\n") <<>>) <$> f s xs
-  f s (Insert x _ : xs)
+  f :: Set FilePath -> Map Text Text -> [Chunk] -> IO (Either String Text)
+  f _ _ [] = pure $ Right ""
+  f _ _ [Literal l] = pure $ Right l
+  f s m (Newline : xs) = (Right "\n" <<>>) <$> f s m xs
+  f s m (Literal x : xs) = (Right x <<>>) <$> f s m xs
+  f s m (Replace r : xs) = case M.lookup r m of
+    Nothing -> pure . Left $ "Error, no match found for " <> show r
+    Just r' -> (Right r' <<>>) <$> f s m xs
+  f s _ (Insert x m : xs)
     | S.member x s = pure $ Left "Error: circular graph detected"
     | otherwise = do
-      c <- processRecurse (S.insert x s) x
-      (c <<>>) <$> f s xs
-
-  (<<>>) :: Either e Text -> Either e Text -> Either e Text
-  (<<>>) = liftA2 (<>)
+      c <- processRecurse (S.insert x s) m x
+      (c <<>>) <$> f s m xs
 
 -- | Process without recursion
-processNoRecurse :: FilePath -> IO Text
-processNoRecurse x = withRelativeDir x . f . parse =<< T.readFile x
+processNoRecurse :: Map Text Text -> FilePath -> IO (Either String Text)
+processNoRecurse r x = withRelativeDir x . f r . parse =<< T.readFile x
   where
-  f :: [Chunk] -> IO Text
-  f [] = pure ""
-  f [Literal l] = pure l
-  f (Newline : xs) = ("\n" <>) <$> f xs
-  f (Literal x : xs) = (x <>) <$> f xs
-  f (Insert x _ : xs) = do
+  f :: Map Text Text -> [Chunk] -> IO (Either String Text)
+  f _ [] = pure $ Right ""
+  f _ [Literal l] = pure $ Right l
+  f m (Newline : xs) = (Right "\n" <<>>) <$> f m xs
+  f m (Literal x : xs) = (Right x <<>>) <$> f m xs
+  f m (Replace r : xs) = case M.lookup r m of
+    Nothing -> pure . Left $ "Error, no match found for " <> show r
+    Just r' -> (Right r' <<>>) <$> f m xs
+  f _ (Insert x m : xs) = do
     c <- T.readFile x
-    (c <>) <$> f xs
+    (Right c <<>>) <$> f m xs
