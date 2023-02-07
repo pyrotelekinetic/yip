@@ -26,7 +26,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Text.Megaparsec hiding (parse)
-import Text.Megaparsec.Char (newline, hspace, eol)
+import Text.Megaparsec.Char (newline, hspace, hspace1, eol)
+import Text.Megaparsec.Char.Lexer (charLiteral)
 import Data.Char (isSpace)
 import Data.Functor (void)
 import Control.Applicative (liftA2)
@@ -36,12 +37,25 @@ type Parser = Parsec Void Text
 data Chunk
   = Literal Text
   | Replace Text
-  | Insert FilePath (Maybe [(Text, Text)])
+  | Insert FilePath [(Text, Text)]
   | Newline
   deriving Show
 
 sepEndBy' :: Parser a -> Parser a -> Parser [a]
 sepEndBy' p sep = liftA2 (:) p (liftA2 (:) sep (sepEndBy' p sep) <|> pure []) <|> pure []
+
+path :: Parser Text -> Parser FilePath
+path p = f <|> some
+  ( do
+    notFollowedBy $ void p <|> hspace1
+    noneOf ['\n', '\0']
+  )
+  where
+  f :: Parser FilePath
+  f = f' (single '"') <|> f' (single '\'')
+    where
+    f' :: Parser a -> Parser String
+    f' p = p >> manyTill charLiteral p
 
 replace :: Parser Chunk
 replace = do
@@ -54,10 +68,21 @@ insert :: Parser Chunk
 insert = do
   hspace
   chunk "{:"
-  r <- some $ notFollowedBy (chunk ":}") *> noneOf ['\n', '\0']
+  hspace
+  r <- path $ chunk ":}"
+  a <- many p
   chunk ":}"
   hspace
-  pure $ Insert r Nothing
+  pure $ Insert r a
+  where
+  p :: Parser (Text, Text)
+  p = do
+    hspace
+    r <- some $ noneOf ['\n', '\0', ':']
+    single ':'
+    notFollowedBy $ chunk "}]"
+    c <- some $ noneOf ['\n', '\0', ':']
+    pure (T.pack r, T.pack c)
 
 literal :: Parser Chunk
 literal = do
