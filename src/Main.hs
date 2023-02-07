@@ -35,22 +35,30 @@ import Control.Applicative (liftA2)
 import Parser
 import Command
 
+data Error
+  = Recursion
+  | ParamMissing Text
+
 type SeenFiles = Set FilePath
 
 main = do
   o <- parseOpts
   r <- process (noRecurse o) $ input o
   case r of
-    (Left e) -> hPutStrLn stderr e
+    (Left e) -> throw e
     (Right t) ->
       case output o of
         "-" -> T.putStr t
         f -> T.writeFile f t
 
+throw :: Error -> IO ()
+throw Recursion = hPutStrLn stderr "Error: Infinite recursion error"
+throw (ParamMissing p) = T.hPutStrLn stderr $ "Error: missing binding for replacement " <> p
+
 withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
 
-process :: Bool -> FilePath -> IO (Either String Text)
+process :: Bool -> FilePath -> IO (Either Error Text)
 process True = processNoRecurse M.empty
 process False = processRecurse S.empty M.empty
 
@@ -58,34 +66,34 @@ process False = processRecurse S.empty M.empty
 (<<>>) = liftA2 (<>)
 
 -- | Process with recursion
-processRecurse :: SeenFiles -> Replacements -> FilePath -> IO (Either String Text)
+processRecurse :: SeenFiles -> Replacements -> FilePath -> IO (Either Error Text)
 processRecurse s m x = withRelativeDir x . f s m . parse =<< T.readFile x
   where
-  f :: SeenFiles -> Replacements -> [Chunk] -> IO (Either String Text)
+  f :: SeenFiles -> Replacements -> [Chunk] -> IO (Either Error Text)
   f _ _ [] = pure $ Right ""
   f _ _ [Literal l] = pure $ Right l
   f s m (Newline : xs) = (Right "\n" <<>>) <$> f s m xs
   f s m (Literal x : xs) = (Right x <<>>) <$> f s m xs
   f s m (Replace r : xs) = case M.lookup r m of
-    Nothing -> pure . Left $ "Error, no match found for " <> show r
+    Nothing -> pure . Left $ ParamMissing r
     Just r' -> (Right r' <<>>) <$> f s m xs
   f s _ (Insert x m : xs)
-    | S.member x s = pure $ Left "Error: circular graph detected"
+    | S.member x s = pure $ Left Recursion
     | otherwise = do
       c <- processRecurse (S.insert x s) m x
       (c <<>>) <$> f s m xs
 
 -- | Process without recursion
-processNoRecurse :: Replacements -> FilePath -> IO (Either String Text)
+processNoRecurse :: Replacements -> FilePath -> IO (Either Error Text)
 processNoRecurse r x = withRelativeDir x . f r . parse =<< T.readFile x
   where
-  f :: Replacements -> [Chunk] -> IO (Either String Text)
+  f :: Replacements -> [Chunk] -> IO (Either Error Text)
   f _ [] = pure $ Right ""
   f _ [Literal l] = pure $ Right l
   f m (Newline : xs) = (Right "\n" <<>>) <$> f m xs
   f m (Literal x : xs) = (Right x <<>>) <$> f m xs
   f m (Replace r : xs) = case M.lookup r m of
-    Nothing -> pure . Left $ "Error, no match found for " <> show r
+    Nothing -> pure . Left $ ParamMissing r
     Just r' -> (Right r' <<>>) <$> f m xs
   f _ (Insert x m : xs) = do
     c <- T.readFile x
