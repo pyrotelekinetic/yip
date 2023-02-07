@@ -18,7 +18,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser (parse, Chunk(..)) where
+module Parser (parse, Chunk(..), Replacements) where
 
 import Data.Void (Void)
 import Data.Maybe (fromJust, maybeToList)
@@ -36,10 +36,12 @@ import Control.Applicative (liftA2)
 
 type Parser = Parsec Void Text
 
+type Replacements = Map Text Text
+
 data Chunk
   = Literal Text
   | Replace Text
-  | Insert FilePath (Map Text Text)
+  | Insert FilePath Replacements
   | Newline
   deriving Show
 

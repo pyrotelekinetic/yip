@@ -34,6 +34,8 @@ import Control.Applicative (liftA2)
 import Parser
 import Command
 
+type SeenFiles = Set FilePath
+
 main = do
   o <- parseOpts
   r <- process (noRecurse o) $ input o
@@ -55,10 +57,10 @@ process False = processRecurse S.empty M.empty
 (<<>>) = liftA2 (<>)
 
 -- | Process with recursion
-processRecurse :: Set FilePath -> Map Text Text -> FilePath -> IO (Either String Text)
+processRecurse :: SeenFiles -> Replacements -> FilePath -> IO (Either String Text)
 processRecurse s m x = withRelativeDir x . f s m . parse =<< T.readFile x
   where
-  f :: Set FilePath -> Map Text Text -> [Chunk] -> IO (Either String Text)
+  f :: SeenFiles -> Replacements -> [Chunk] -> IO (Either String Text)
   f _ _ [] = pure $ Right ""
   f _ _ [Literal l] = pure $ Right l
   f s m (Newline : xs) = (Right "\n" <<>>) <$> f s m xs
@@ -73,10 +75,10 @@ processRecurse s m x = withRelativeDir x . f s m . parse =<< T.readFile x
       (c <<>>) <$> f s m xs
 
 -- | Process without recursion
-processNoRecurse :: Map Text Text -> FilePath -> IO (Either String Text)
+processNoRecurse :: Replacements -> FilePath -> IO (Either String Text)
 processNoRecurse r x = withRelativeDir x . f r . parse =<< T.readFile x
   where
-  f :: Map Text Text -> [Chunk] -> IO (Either String Text)
+  f :: Replacements -> [Chunk] -> IO (Either String Text)
   f _ [] = pure $ Right ""
   f _ [Literal l] = pure $ Right l
   f m (Newline : xs) = (Right "\n" <<>>) <$> f m xs
