@@ -29,6 +29,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import System.FilePath (dropFileName)
 import System.Directory (withCurrentDirectory)
+import System.IO (hPutStrLn, stderr)
 import Control.Applicative (liftA2)
 
 import Parser
@@ -40,7 +41,7 @@ main = do
   o <- parseOpts
   r <- process (noRecurse o) $ input o
   case r of
-    (Left e) -> putStrLn e
+    (Left e) -> hPutStrLn stderr e
     (Right t) ->
       case output o of
         "-" -> T.putStr t
