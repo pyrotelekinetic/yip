@@ -2,6 +2,8 @@
 
 A very simple pre processor.
 
+> NB: yip is still in early development, expect breaking changes.
+
 ---
 
     Copyright (C) 2023,2024  Carter "pyrotelekinetic" Ison <carter@isons.org>
