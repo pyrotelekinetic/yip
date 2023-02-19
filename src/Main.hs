@@ -17,6 +17,7 @@
  -}
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Main where
 
@@ -24,7 +25,8 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
+import qualified Data.Text.Encoding as T
+import qualified Data.ByteString as B
 import Data.Set (Set)
 import qualified Data.Set as S
 import System.FilePath (dropFileName)
@@ -48,15 +50,28 @@ main = do
     (Left e) -> throw e
     (Right t) ->
       case output o of
-        "-" -> T.putStr t
-        f -> T.writeFile f t
+        "-" -> putUtf8 t
+        f -> writeUtf8 f t
 
 throw :: Error -> IO ()
-throw Recursion = hPutStrLn stderr "Error: Infinite recursion error"
-throw (ParamMissing p) = T.hPutStrLn stderr $ "Error: missing binding for replacement " <> p
+throw = \case
+  Recursion -> putErr "Error: Infinite recursion error"
+  (ParamMissing p) -> putErr $ "Error: missing binding for replacement " <> p
+  where
+  putErr :: Text -> IO ()
+  putErr t = B.hPut stderr $ T.encodeUtf8 t <> "\n"
 
 withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
+
+readUtf8 :: FilePath -> IO Text
+readUtf8 x = T.decodeUtf8 <$> B.readFile x
+
+writeUtf8 :: FilePath -> Text -> IO ()
+writeUtf8 f x = B.writeFile f $ T.encodeUtf8 x
+
+putUtf8 :: Text -> IO ()
+putUtf8 x = B.putStr $ T.encodeUtf8 x
 
 process :: Bool -> FilePath -> IO (Either Error Text)
 process True = processNoRecurse M.empty
@@ -67,7 +82,7 @@ process False = processRecurse S.empty M.empty
 
 -- | Process with recursion
 processRecurse :: SeenFiles -> Replacements -> FilePath -> IO (Either Error Text)
-processRecurse s m x = withRelativeDir x . f s m . parse =<< T.readFile x
+processRecurse s m x = withRelativeDir x . f s m . parse =<< readUtf8 x
   where
   f :: SeenFiles -> Replacements -> [Chunk] -> IO (Either Error Text)
   f _ _ [] = pure $ Right ""
@@ -85,7 +100,7 @@ processRecurse s m x = withRelativeDir x . f s m . parse =<< T.readFile x
 
 -- | Process without recursion
 processNoRecurse :: Replacements -> FilePath -> IO (Either Error Text)
-processNoRecurse r x = withRelativeDir x . f r . parse =<< T.readFile x
+processNoRecurse r x = withRelativeDir x . f r . parse =<< readUtf8 x
   where
   f :: Replacements -> [Chunk] -> IO (Either Error Text)
   f _ [] = pure $ Right ""
@@ -96,5 +111,5 @@ processNoRecurse r x = withRelativeDir x . f r . parse =<< T.readFile x
     Nothing -> pure . Left $ ParamMissing r
     Just r' -> (Right r' <<>>) <$> f m xs
   f _ (Insert x m : xs) = do
-    c <- T.readFile x
+    c <- readUtf8 x
     (Right c <<>>) <$> f m xs
