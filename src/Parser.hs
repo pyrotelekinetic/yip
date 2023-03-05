@@ -28,7 +28,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Text.Megaparsec hiding (parse)
-import Text.Megaparsec.Char (newline, hspace, hspace1, eol)
+import Text.Megaparsec.Char (newline, space, hspace, hspace1, eol)
 import Text.Megaparsec.Char.Lexer (charLiteral)
 import Data.Char (isSpace)
 import Data.Functor (void)
@@ -76,7 +76,7 @@ paramName = T.pack <$> some (satisfy c)
 
 parameter :: Parser (Text, Text)
 parameter = do
-  r <- try (hspace >> paramName)
+  r <- try (space >> paramName)
   hspace
   single ':'
   hspace
@@ -87,10 +87,10 @@ insert :: Parser Chunk
 insert = do
   hspace
   chunk "{:"
-  hspace
+  space
   r <- quoted $ chunk ":}"
   a <- M.fromList <$> many parameter
-  hspace
+  space
   chunk ":}"
   hspace
   pure $ Insert r a
