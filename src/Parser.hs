@@ -84,7 +84,7 @@ insert = do
     hspace
     r <- some $ noneOf ['\n', '\0', ':']
     single ':'
-    notFollowedBy $ chunk "}]"
+    notFollowedBy $ chunk ":}"
     c <- some $ noneOf ['\n', '\0', ':']
     pure (T.pack r, T.pack c)
 
