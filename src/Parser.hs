@@ -48,14 +48,14 @@ data Chunk
 sepEndBy' :: Parser a -> Parser a -> Parser [a]
 sepEndBy' p sep = liftA2 (:) p (liftA2 (:) sep (sepEndBy' p sep) <|> pure []) <|> pure []
 
-path :: Parser Text -> Parser FilePath
-path p = f <|> some
+quoted :: Parser Text -> Parser String
+quoted p = f <|> some
   ( do
     notFollowedBy $ void p <|> hspace1
     noneOf ['\n', '\0']
   )
   where
-  f :: Parser FilePath
+  f :: Parser String
   f = f' (single '"') <|> f' (single '\'')
     where
     f' :: Parser a -> Parser String
@@ -64,29 +64,36 @@ path p = f <|> some
 replace :: Parser Chunk
 replace = do
   chunk "{!"
-  r <- some $ satisfy (\x -> not (isSpace x) && x /= '!')
+  r <- paramName
   chunk "!}"
-  pure . Replace $ T.pack r
+  pure $ Replace r
+
+paramName :: Parser Text
+paramName = T.pack <$> some (satisfy c)
+  where
+  c :: Char -> Bool
+  c x = not (isSpace x) && x `notElem` ['!', ':']
+
+parameter :: Parser (Text, Text)
+parameter = do
+  r <- try (hspace >> paramName)
+  hspace
+  single ':'
+  hspace
+  c <- quoted $ chunk ":}"
+  pure (r, T.pack c)
 
 insert :: Parser Chunk
 insert = do
   hspace
   chunk "{:"
   hspace
-  r <- path $ chunk ":}"
-  a <- M.fromList <$> many p
+  r <- quoted $ chunk ":}"
+  a <- M.fromList <$> many parameter
+  hspace
   chunk ":}"
   hspace
   pure $ Insert r a
-  where
-  p :: Parser (Text, Text)
-  p = do
-    hspace
-    r <- some $ noneOf ['\n', '\0', ':']
-    single ':'
-    notFollowedBy $ chunk ":}"
-    c <- some $ noneOf ['\n', '\0', ':']
-    pure (T.pack r, T.pack c)
 
 literal :: Parser Chunk
 literal = do
