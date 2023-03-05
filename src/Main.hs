@@ -32,6 +32,7 @@ import qualified Data.Set as S
 import System.FilePath (dropFileName)
 import System.Directory (withCurrentDirectory)
 import System.IO (hPutStrLn, stderr)
+import System.Exit (exitFailure)
 import Control.Applicative (liftA2)
 
 import Parser
@@ -47,19 +48,19 @@ main = do
   o <- parseOpts
   r <- process (noRecurse o) $ input o
   case r of
-    (Left e) -> throw e
+    (Left e) -> reportError e
     (Right t) ->
       case output o of
         "-" -> putUtf8 t
         f -> writeUtf8 f t
 
-throw :: Error -> IO ()
-throw = \case
+reportError :: Error -> IO ()
+reportError = \case
   Recursion -> putErr "Error: Infinite recursion error"
   (ParamMissing p) -> putErr $ "Error: missing binding for replacement " <> p
   where
   putErr :: Text -> IO ()
-  putErr t = B.hPut stderr $ T.encodeUtf8 t <> "\n"
+  putErr t = B.hPut stderr (T.encodeUtf8 t <> "\n") >> exitFailure
 
 withRelativeDir :: FilePath -> IO a -> IO a
 withRelativeDir = withCurrentDirectory . dropFileName
