@@ -34,6 +34,9 @@ executable yip
         , bytestring
         , filepath
         , directory
+    default-extensions:
+        OverloadedStrings
+        LambdaCase
     ghc-options:
         -Wall
         -Wno-unused-do-bind

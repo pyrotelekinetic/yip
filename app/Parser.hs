@@ -16,8 +16,6 @@
  -  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
-{-# LANGUAGE OverloadedStrings #-}
-
 module Parser (parse, Chunk(..), Replacements) where
 
 import Data.Void (Void)

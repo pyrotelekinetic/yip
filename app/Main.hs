@@ -16,9 +16,6 @@
  -  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
-
 module Main where
 
 import Data.Map.Strict (Map)
