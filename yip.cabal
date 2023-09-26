@@ -1,0 +1,41 @@
+cabal-version:      3.0
+
+name:               yip
+version:            0.0.0
+synopsis:           A very simple preprocessor
+category:           Text
+
+license:            AGPL-3.0-or-later
+license-file:       LICENSE
+
+author:             Carter "pyrotelekinetic" Ison
+maintainer:         carter@isons.org
+copyright:          (C) 2023  Carter "pyrotelekinetic" Ison <carter@isons.org>
+
+extra-doc-files:    README.md
+
+build-type:         Simple
+
+executable yip
+    hs-source-dirs:   app
+    main-is:          Main.hs
+
+    other-modules:
+        Command
+        Parser
+
+    -- Libraries are locked with 'cabal freeze' to the version provided by nix.
+    build-depends:
+        , base
+        , megaparsec
+        , optparse-applicative
+        , text
+        , containers
+        , bytestring
+        , filepath
+        , directory
+    ghc-options:
+        -Wall
+        -Wno-unused-do-bind
+
+    default-language: GHC2021
