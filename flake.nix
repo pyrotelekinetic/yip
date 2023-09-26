@@ -2,14 +2,7 @@
 
 description = "A very simple preprocessor";
 
-inputs = {
-  nixpkgs = {
-    type = "github";
-    owner = "NixOS";
-    repo = "nixpkgs";
-    ref = "release-22.11";
-  };
-};
+inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
 outputs = { self, nixpkgs }:
   let
