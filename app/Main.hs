@@ -18,17 +18,15 @@
 
 module Main where
 
-import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString as B
 import Data.Set (Set)
 import qualified Data.Set as S
 import System.FilePath (dropFileName)
 import System.Directory (withCurrentDirectory)
-import System.IO (hPutStrLn, stderr)
+import System.IO (stderr)
 import System.Exit (exitFailure)
 import Control.Applicative (liftA2)
 
@@ -41,6 +39,7 @@ data Error
 
 type SeenFiles = Set FilePath
 
+main :: IO ()
 main = do
   o <- parseOpts
   r <- process (noRecurse o) $ input o

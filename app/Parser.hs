@@ -19,14 +19,13 @@
 module Parser (parse, Chunk(..), Replacements) where
 
 import Data.Void (Void)
-import Data.Maybe (fromJust, maybeToList)
+import Data.Maybe (fromJust)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import Text.Megaparsec hiding (parse)
-import Text.Megaparsec.Char (newline, space, hspace, hspace1, eol)
+import Text.Megaparsec.Char (space, hspace, hspace1, eol)
 import Text.Megaparsec.Char.Lexer (charLiteral)
 import Data.Char (isSpace)
 import Data.Functor (void)

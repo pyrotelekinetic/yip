@@ -40,5 +40,6 @@ executable yip
     ghc-options:
         -Wall
         -Wno-unused-do-bind
+        -Wno-name-shadowing
 
     default-language: GHC2021
