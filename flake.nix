@@ -9,17 +9,16 @@ outputs = { self, nixpkgs }: let
   allSystems = output: nixpkgs.lib.genAttrs supportedSystems
     (system: output nixpkgs.legacyPackages.${system});
 
-  haskellPackages = pkgs: pkgs.haskell.packages.ghc94;
-  yip = pkgs: (haskellPackages pkgs).callPackage ./yip.nix { };
+  yip = pkgs: pkgs.haskellPackages.callPackage ./yip.nix { };
 in {
   packages = allSystems (pkgs: {
     default = yip pkgs;
   });
 
   devShells = allSystems (pkgs: {
-    default = (haskellPackages pkgs).shellFor {
+    default = pkgs.haskellPackages.shellFor {
       packages = pkgs.lib.const [ (yip pkgs) ];
-      nativeBuildInputs = with (haskellPackages pkgs); [
+      nativeBuildInputs = with pkgs.haskellPackages; [
         ghc
         ghcid
         hlint
