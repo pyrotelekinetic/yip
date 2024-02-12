@@ -5,25 +5,22 @@ description = "A very simple preprocessor";
 inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
 outputs = { self, nixpkgs }: let
-  supportedSystems = [ "x86_64-linux" "aarch64-linux" ];
+  supportedSystems = nixpkgs.lib.systems.flakeExposed;
   allSystems = output: nixpkgs.lib.genAttrs supportedSystems
     (system: output nixpkgs.legacyPackages.${system});
-
-  yip = pkgs: pkgs.haskellPackages.callPackage ./yip.nix { };
 in {
   packages = allSystems (pkgs: {
-    default = yip pkgs;
+    default = pkgs.haskellPackages.developPackage { root = ./.; };
   });
 
   devShells = allSystems (pkgs: {
     default = pkgs.haskellPackages.shellFor {
-      packages = pkgs.lib.const [ (yip pkgs) ];
+      packages = _: [ self.packages.${pkgs.system}.default ];
       nativeBuildInputs = with pkgs.haskellPackages; [
         ghc
         ghcid
         hlint
         cabal-install
-        cabal2nix
       ];
     };
   });
